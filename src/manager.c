@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     read(fd, compatible, sizeof(compatible));
-    if (strstr(compatible, "pine64,pinephone-1.1"))
+    if (!strstr(compatible, "pine64,pinephone-1.2"))
         manager.braveheart = TRUE;
     close(fd);
 
