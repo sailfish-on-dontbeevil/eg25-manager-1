@@ -22,9 +22,6 @@ static gboolean quit_timeout_cb(struct EG25Manager *manager)
     g_message("Modem down, quitting...");
     g_main_loop_quit(manager->loop);
 
-    at_destroy(manager);
-    gpio_destroy(manager);
-
     return FALSE;
 }
 
@@ -155,6 +152,9 @@ int main(int argc, char *argv[])
     g_unix_signal_add(SIGTERM, G_SOURCE_FUNC(quit_app), &manager);
 
     g_main_loop_run(manager.loop);
+
+    at_destroy(&manager);
+    gpio_destroy(&manager);
 
     return 0;
 }
