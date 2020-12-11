@@ -249,7 +249,7 @@ void at_sequence_configure(struct EG25Manager *manager)
 
 void at_sequence_suspend(struct EG25Manager *manager)
 {
-    append_at_command(manager, "QGPS", NULL, NULL, "0");
+    append_at_command(manager, "QGPS", NULL, "0", NULL);
     append_at_command(manager, "QCFG", "urc/cache", "1", NULL);
     send_at_command(manager);
 }
@@ -257,7 +257,7 @@ void at_sequence_suspend(struct EG25Manager *manager)
 void at_sequence_resume(struct EG25Manager *manager)
 {
     append_at_command(manager, "QCFG", "urc/cache", "0", NULL);
-    append_at_command(manager, "QGPS", NULL, NULL, "1");
+    append_at_command(manager, "QGPS", NULL, "1", NULL);
     send_at_command(manager);
 }
 
