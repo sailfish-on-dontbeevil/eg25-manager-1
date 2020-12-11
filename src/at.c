@@ -181,7 +181,7 @@ static gboolean modem_response(gint fd,
 
         if (strcmp(response, "RDY") == 0)
             manager->modem_state = EG25_STATE_STARTED;
-        else if (strcmp(response, "ERROR") == 0)
+        else if (strstr(response, "ERROR"))
             retry_at_command(manager);
         else if (strstr(response, "OK"))
             process_at_result(manager, response);
