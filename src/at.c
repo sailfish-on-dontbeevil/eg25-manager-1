@@ -195,6 +195,9 @@ static gboolean modem_response(gint fd,
             retry_at_command(manager);
         else if (strstr(response, "OK"))
             process_at_result(manager, response);
+        else
+            // Not a recognized response, try running next command, just in case
+            next_at_command(manager);
     }
 
     return TRUE;
