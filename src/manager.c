@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 {
     struct EG25Manager manager;
     char compatible[32];
-    int fd;
+    int fd, ret;
 
     memset(&manager, 0, sizeof(manager));
     manager.at_fd = -1;
@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
         g_critical("Unable to read 'compatible' string from device tree");
         return 1;
     }
-    read(fd, compatible, sizeof(compatible));
-    if (!strstr(compatible, "pine64,pinephone-1.2"))
+    ret = read(fd, compatible, sizeof(compatible));
+    if (ret > 0 && !strstr(compatible, "pine64,pinephone-1.2"))
         manager.braveheart = TRUE;
     close(fd);
 
