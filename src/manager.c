@@ -112,18 +112,23 @@ void modem_configure(struct EG25Manager *manager)
 
 void modem_reset(struct EG25Manager *manager)
 {
-    int fd;
+    int fd, ret, len = strlen(manager->modem_usb_id);
 
     fd = open("/sys/bus/usb/drivers/usb/unbind", O_WRONLY);
     if (fd < 0)
         goto error;
-    write(fd, manager->modem_usb_id, strlen(manager->modem_usb_id));
+    ret = write(fd, manager->modem_usb_id, len);
+    if (ret < len)
+        g_warning("Couldn't unbind modem: wrote %d/%d bytes", ret, len);
     close(fd);
 
     fd = open("/sys/bus/usb/drivers/usb/bind", O_WRONLY);
     if (fd < 0)
         goto error;
-    write(fd, manager->modem_usb_id, strlen(manager->modem_usb_id));
+    ret = write(fd, manager->modem_usb_id, len);
+    if (ret < len)
+        g_warning("Couldn't unbind modem: wrote %d/%d bytes", ret, len);
+
     close(fd);
 
     return;
