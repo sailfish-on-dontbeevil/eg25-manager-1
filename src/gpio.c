@@ -177,7 +177,7 @@ gboolean gpio_check_poweroff(struct EG25Manager *manager, gboolean keep_down)
     if (manager->gpio_in[GPIO_IN_STATUS] &&
         gpiod_line_get_value(manager->gpio_in[GPIO_IN_STATUS]) == 1) {
 
-        if (keep_down) {
+        if (keep_down && manager->gpio_out[GPIO_OUT_RESET]) {
             // Asserting RESET line to prevent modem from rebooting
             gpiod_line_set_value(manager->gpio_out[GPIO_OUT_RESET], 1);
         }

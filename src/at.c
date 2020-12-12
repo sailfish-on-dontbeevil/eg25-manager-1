@@ -52,7 +52,7 @@ static int configure_serial(const char *tty)
 static gboolean send_at_command(struct EG25Manager *manager)
 {
     char command[256];
-    struct AtCommand *at_cmd = g_list_nth_data(manager->at_cmds, 0);
+    struct AtCommand *at_cmd = manager->at_cmds ? g_list_nth_data(manager->at_cmds, 0) : NULL;
 
     if (at_cmd) {
         if (at_cmd->subcmd == NULL && at_cmd->value == NULL && at_cmd->expected == NULL)
@@ -88,7 +88,10 @@ static gboolean send_at_command(struct EG25Manager *manager)
 
 static void next_at_command(struct EG25Manager *manager)
 {
-    struct AtCommand *at_cmd = g_list_nth_data(manager->at_cmds, 0);
+    struct AtCommand *at_cmd = manager->at_cmds ? g_list_nth_data(manager->at_cmds, 0) : NULL;
+
+    if (!at_cmd)
+        return;
 
     if (at_cmd->cmd)
         g_free(at_cmd->cmd);
@@ -106,7 +109,10 @@ static void next_at_command(struct EG25Manager *manager)
 
 static void retry_at_command(struct EG25Manager *manager)
 {
-    struct AtCommand *at_cmd = g_list_nth_data(manager->at_cmds, 0);
+    struct AtCommand *at_cmd = manager->at_cmds ? g_list_nth_data(manager->at_cmds, 0) : NULL;
+
+    if (!at_cmd)
+        return;
 
     at_cmd->retries++;
     if (at_cmd->retries > 3) {
@@ -119,7 +125,10 @@ static void retry_at_command(struct EG25Manager *manager)
 
 static void process_at_result(struct EG25Manager *manager, char *response)
 {
-    struct AtCommand *at_cmd = g_list_nth_data(manager->at_cmds, 0);
+    struct AtCommand *at_cmd = manager->at_cmds ? g_list_nth_data(manager->at_cmds, 0) : NULL;
+
+    if (!at_cmd)
+        return;
 
     if (at_cmd->expected && !strstr(response, at_cmd->expected)) {
         if (at_cmd->value)
