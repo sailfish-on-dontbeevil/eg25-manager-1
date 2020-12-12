@@ -131,13 +131,13 @@ int gpio_init(struct EG25Manager *manager)
 
         manager->gpio_out[i] = gpiod_chip_get_line(manager->gpiochip[chipidx], offset);
         if (!manager->gpio_out[i]) {
-            g_critical("Unable to get output GPIO %d", i);
+            g_error("Unable to get output GPIO %d", i);
             return 1;
         }
 
         ret = gpiod_line_request_output(manager->gpio_out[i], "eg25manager", 0);
         if (ret < 0) {
-            g_critical("Unable to request output GPIO %d", i);
+            g_error("Unable to request output GPIO %d", i);
             return 1;
         }
     }
