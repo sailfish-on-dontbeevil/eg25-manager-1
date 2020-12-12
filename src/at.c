@@ -53,20 +53,23 @@ static gboolean send_at_command(struct EG25Manager *manager)
 {
     char command[256];
     struct AtCommand *at_cmd = manager->at_cmds ? g_list_nth_data(manager->at_cmds, 0) : NULL;
+    int ret, len = 0;
 
     if (at_cmd) {
         if (at_cmd->subcmd == NULL && at_cmd->value == NULL && at_cmd->expected == NULL)
-            sprintf(command, "AT+%s\r\n", at_cmd->cmd);
+            len = sprintf(command, "AT+%s\r\n", at_cmd->cmd);
         else if (at_cmd->subcmd == NULL && at_cmd->value == NULL)
-            sprintf(command, "AT+%s?\r\n", at_cmd->cmd);
+            len = sprintf(command, "AT+%s?\r\n", at_cmd->cmd);
         else if (at_cmd->subcmd == NULL && at_cmd->value)
-            sprintf(command, "AT+%s=%s\r\n", at_cmd->cmd, at_cmd->value);
+            len = sprintf(command, "AT+%s=%s\r\n", at_cmd->cmd, at_cmd->value);
         else if (at_cmd->subcmd && at_cmd->value == NULL)
-            sprintf(command, "AT+%s=\"%s\"\r\n", at_cmd->cmd, at_cmd->subcmd);
+            len = sprintf(command, "AT+%s=\"%s\"\r\n", at_cmd->cmd, at_cmd->subcmd);
         else if (at_cmd->subcmd && at_cmd->value)
-            sprintf(command, "AT+%s=\"%s\",%s\r\n", at_cmd->cmd, at_cmd->subcmd, at_cmd->value);
+            len = sprintf(command, "AT+%s=\"%s\",%s\r\n", at_cmd->cmd, at_cmd->subcmd, at_cmd->value);
 
-        write(manager->at_fd, command, strlen(command));
+        ret = write(manager->at_fd, command, len);
+        if (ret < len)
+            g_warning("Couldn't write full AT command: wrote %d/%d bytes", ret, len);
 
         g_message("Sending command: %s", g_strstrip(command));
     } else if (manager->modem_state < EG25_STATE_CONFIGURED) {
@@ -238,9 +241,9 @@ void at_sequence_configure(struct EG25Manager *manager)
 {
     /*
      * Default parameters in megi's driver which differ with our own:
-     *   - urc/ri/* are always set the same way on both BH and CE
-     *   - urc/ri/* pulse duration is 1 ms and urc/delay is 0 (no need to delay
-     *     URCs if the pulse is that short)
+     *   - urc/ri/x are always set the same way on both BH and CE
+     *   - urc/ri/x pulse duration is 1 ms and urc/delay is 0 (no need to delay
+     *     URCs if the pulse is that short, so this is expected)
      *   - apready is disabled
      *
      * Parameters set in megi's kernel but not here:
