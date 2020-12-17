@@ -99,7 +99,7 @@ static void signal_cb(GDBusProxy *proxy,
         take_inhibitor(manager);
         modem_resume_pre(manager);
         manager->modem_state = EG25_STATE_RESUMING;
-        manager->suspend_source = g_timeout_add_seconds(8, G_SOURCE_FUNC(check_modem_resume), manager);
+        manager->suspend_source = g_timeout_add_seconds(9, G_SOURCE_FUNC(check_modem_resume), manager);
     }
 }
 
