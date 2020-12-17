@@ -26,6 +26,11 @@ enum EG25State {
 
 struct EG25Manager {
     GMainLoop *loop;
+    guint reset_timer;
+
+    int at_fd;
+    guint at_source;
+    GList *at_cmds;
 
     enum EG25State modem_state;
     gchar *modem_usb_id;
@@ -39,10 +44,6 @@ struct EG25Manager {
     int suspend_inhibit_fd;
     guint suspend_source;
 
-
-    int at_fd;
-    guint at_source;
-    GList *at_cmds;
 
     struct gpiod_chip *gpiochip[2];
     struct gpiod_line *gpio_out[5];

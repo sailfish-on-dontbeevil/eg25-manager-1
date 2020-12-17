@@ -20,6 +20,7 @@
 static gboolean check_modem_resume(struct EG25Manager *manager)
 {
     g_message("Modem wasn't probed in time, restart it!");
+    manager->suspend_source = 0;
     modem_reset(manager);
 
     return FALSE;

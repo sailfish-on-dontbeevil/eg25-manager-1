@@ -110,9 +110,26 @@ void modem_configure(struct EG25Manager *manager)
     at_sequence_configure(manager);
 }
 
+static gboolean modem_reset_done(struct EG25Manager* manager)
+{
+    manager->modem_state = EG25_STATE_RESUMING;
+    manager->reset_timer = 0;
+    return FALSE;
+}
+
 void modem_reset(struct EG25Manager *manager)
 {
     int fd, ret, len = strlen(manager->modem_usb_id);
+
+    if (manager->reset_timer)
+        return;
+
+    if (manager->suspend_source) {
+        g_source_remove(manager->suspend_source);
+        manager->suspend_source = 0;
+    }
+
+    manager->modem_state = EG25_STATE_RESETTING;
 
     fd = open("/sys/bus/usb/drivers/usb/unbind", O_WRONLY);
     if (fd < 0)
@@ -127,16 +144,20 @@ void modem_reset(struct EG25Manager *manager)
         goto error;
     ret = write(fd, manager->modem_usb_id, len);
     if (ret < len)
-        g_warning("Couldn't unbind modem: wrote %d/%d bytes", ret, len);
-
+        g_warning("Couldn't bind modem: wrote %d/%d bytes", ret, len);
     close(fd);
+
+    /*
+     * 3s is long enough to make sure the modem has been bound back and
+     * short enough to ensure it hasn't been acquired by ModemManager
+     */
+    manager->reset_timer = g_timeout_add_seconds(3, G_SOURCE_FUNC(modem_reset_done), manager);
 
     return;
 
 error:
     // Everything else failed, reset the modem
     at_sequence_reset(manager);
-    manager->modem_state = EG25_STATE_RESETTING;
 }
 
 void modem_suspend(struct EG25Manager *manager)
