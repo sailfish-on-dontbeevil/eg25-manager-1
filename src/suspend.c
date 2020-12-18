@@ -20,7 +20,7 @@
 static gboolean check_modem_resume(struct EG25Manager *manager)
 {
     g_message("Modem wasn't probed in time, restart it!");
-    manager->suspend_source = 0;
+    manager->suspend_timer = 0;
     modem_reset(manager);
 
     return FALSE;
@@ -100,7 +100,7 @@ static void signal_cb(GDBusProxy *proxy,
         take_inhibitor(manager);
         modem_resume_pre(manager);
         manager->modem_state = EG25_STATE_RESUMING;
-        manager->suspend_source = g_timeout_add_seconds(9, G_SOURCE_FUNC(check_modem_resume), manager);
+        manager->suspend_timer = g_timeout_add_seconds(9, G_SOURCE_FUNC(check_modem_resume), manager);
     }
 }
 
@@ -158,9 +158,9 @@ void suspend_init(struct EG25Manager *manager)
 void suspend_destroy(struct EG25Manager *manager)
 {
     drop_inhibitor(manager);
-    if (manager->suspend_source) {
-        g_source_remove(manager->suspend_source);
-        manager->suspend_source = 0;
+    if (manager->suspend_timer) {
+        g_source_remove(manager->suspend_timer);
+        manager->suspend_timer = 0;
     }
     if (manager->suspend_proxy) {
         g_object_unref(manager->suspend_proxy);

@@ -43,7 +43,7 @@ struct EG25Manager {
 
     GDBusProxy *suspend_proxy;
     int suspend_inhibit_fd;
-    guint suspend_source;
+    guint suspend_timer;
 
     GUdevClient *udev;
 

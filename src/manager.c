@@ -126,9 +126,9 @@ void modem_reset(struct EG25Manager *manager)
     if (manager->reset_timer)
         return;
 
-    if (manager->suspend_source) {
-        g_source_remove(manager->suspend_source);
-        manager->suspend_source = 0;
+    if (manager->suspend_timer) {
+        g_source_remove(manager->suspend_timer);
+        manager->suspend_timer = 0;
     }
 
     manager->modem_state = EG25_STATE_RESETTING;
