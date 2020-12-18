@@ -8,6 +8,7 @@
 
 #include <glib.h>
 #include <gpiod.h>
+#include <gudev/gudev.h>
 #include <libmm-glib.h>
 
 enum EG25State {
@@ -44,6 +45,7 @@ struct EG25Manager {
     int suspend_inhibit_fd;
     guint suspend_source;
 
+    GUdevClient *udev;
 
     struct gpiod_chip *gpiochip[2];
     struct gpiod_line *gpio_out[5];

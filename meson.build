@@ -43,6 +43,7 @@ endif
 mgr_deps = [
     dependency('glib-2.0'),
     dependency('gio-unix-2.0'),
+    dependency('gudev-1.0'),
     dependency('libgpiod'),
     dependency('libusb-1.0'),
     dependency('mm-glib'),

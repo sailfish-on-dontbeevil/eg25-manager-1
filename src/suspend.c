@@ -158,6 +158,10 @@ void suspend_init(struct EG25Manager *manager)
 void suspend_destroy(struct EG25Manager *manager)
 {
     drop_inhibitor(manager);
+    if (manager->suspend_source) {
+        g_source_remove(manager->suspend_source);
+        manager->suspend_source = 0;
+    }
     if (manager->suspend_proxy) {
         g_object_unref(manager->suspend_proxy);
         manager->suspend_proxy = NULL;

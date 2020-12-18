@@ -9,6 +9,7 @@
 #include "manager.h"
 #include "mm-iface.h"
 #include "suspend.h"
+#include "udev.h"
 
 #include <fcntl.h>
 #include <signal.h>
@@ -30,6 +31,7 @@ static gboolean quit_app(struct EG25Manager *manager)
     at_destroy(manager);
     mm_iface_destroy(manager);
     suspend_destroy(manager);
+    udev_destroy(manager);
 
     if (manager->modem_state >= EG25_STATE_STARTED) {
         g_message("Powering down the modem...");
@@ -202,6 +204,7 @@ int main(int argc, char *argv[])
     gpio_init(&manager);
     mm_iface_init(&manager);
     suspend_init(&manager);
+    udev_init(&manager);
 
     g_idle_add(G_SOURCE_FUNC(modem_start), &manager);
 
