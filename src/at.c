@@ -271,6 +271,8 @@ void at_sequence_configure(struct EG25Manager *manager)
     append_at_command(manager, "QURCCFG", "urcport", NULL, "\"usbat\"");
     append_at_command(manager, "QGPS", NULL, NULL, "1");
     append_at_command(manager, "QSCLK", NULL, "1", NULL);
+    // Make sure URC cache is disabled
+    append_at_command(manager, "QCFG", "urc/cache", "0", NULL);
     send_at_command(manager);
 }
 
