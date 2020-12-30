@@ -80,8 +80,7 @@ static gboolean send_at_command(struct EG25Manager *manager)
         else
             manager->modem_state = EG25_STATE_CONFIGURED;
     } else if (manager->modem_state == EG25_STATE_SUSPENDING) {
-        g_message("suspend sequence is over, drop inhibitor");
-        suspend_inhibit(manager, FALSE);
+        modem_suspend_post(manager);
     } else if (manager->modem_state == EG25_STATE_RESETTING) {
         manager->modem_state = EG25_STATE_POWERED;
     }

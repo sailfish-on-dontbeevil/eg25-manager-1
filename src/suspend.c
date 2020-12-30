@@ -94,7 +94,7 @@ static void signal_cb(GDBusProxy *proxy,
     if (is_about_to_suspend) {
         g_message("system is about to suspend");
         manager->modem_state = EG25_STATE_SUSPENDING;
-        modem_suspend(manager);
+        modem_suspend_pre(manager);
     } else {
         g_message("system is resuming");
         take_inhibitor(manager);

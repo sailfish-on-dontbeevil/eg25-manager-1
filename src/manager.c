@@ -162,10 +162,16 @@ error:
     at_sequence_reset(manager);
 }
 
-void modem_suspend(struct EG25Manager *manager)
+void modem_suspend_pre(struct EG25Manager *manager)
+{
+    at_sequence_suspend(manager);
+}
+
+void modem_suspend_post(struct EG25Manager *manager)
 {
     gpio_sequence_suspend(manager);
-    at_sequence_suspend(manager);
+    g_message("suspend sequence is over, drop inhibitor");
+    suspend_inhibit(manager, FALSE);
 }
 
 void modem_resume_pre(struct EG25Manager *manager)
