@@ -121,7 +121,7 @@ static void retry_at_command(struct EG25Manager *manager)
         g_critical("Command %s retried %d times, aborting...", at_cmd->cmd, at_cmd->retries);
         next_at_command(manager);
     } else {
-        g_timeout_add_seconds(3, G_SOURCE_FUNC(send_at_command), manager);
+        g_timeout_add(500, G_SOURCE_FUNC(send_at_command), manager);
     }
 }
 
