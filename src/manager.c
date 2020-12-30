@@ -121,7 +121,7 @@ static gboolean modem_reset_done(struct EG25Manager* manager)
 
 void modem_reset(struct EG25Manager *manager)
 {
-    int fd, ret, len = strlen(manager->modem_usb_id);
+    int fd, ret, len;
 
     if (manager->reset_timer)
         return;
@@ -130,6 +130,13 @@ void modem_reset(struct EG25Manager *manager)
         g_source_remove(manager->suspend_timer);
         manager->suspend_timer = 0;
     }
+
+    if (!manager->modem_usb_id) {
+        g_warning("Unknown modem USB ID");
+        goto error;
+    }
+
+    len = strlen(manager->modem_usb_id);
 
     manager->modem_state = EG25_STATE_RESETTING;
 
