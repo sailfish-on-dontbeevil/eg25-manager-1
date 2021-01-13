@@ -8,7 +8,7 @@
 project (
   'eg25manager',
   'c',
-  version : '0.1.1',
+  version : '0.1.2',
   license : 'GPLv3+',
   meson_version : '>= 0.50.0',
   default_options :
