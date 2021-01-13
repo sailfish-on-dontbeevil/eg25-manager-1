@@ -193,13 +193,26 @@ void modem_resume_post(struct EG25Manager *manager)
 
 int main(int argc, char *argv[])
 {
+    g_autoptr(GOptionContext) opt_context = NULL;
+    g_autoptr(GError) err = NULL;
     struct EG25Manager manager;
     char compatible[32];
     int fd, ret;
+    const GOptionEntry options[] = {
+        { "gnss", 'g', 0, G_OPTION_ARG_NONE, &manager.manage_gnss, "Manage the GNSS feature.", NULL },
+        { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
+    };
 
     memset(&manager, 0, sizeof(manager));
     manager.at_fd = -1;
     manager.suspend_inhibit_fd = -1;
+
+    opt_context = g_option_context_new ("- Power management for the Quectel EG25 modem");
+    g_option_context_add_main_entries (opt_context, options, NULL);
+    if (!g_option_context_parse (opt_context, &argc, &argv, &err)) {
+        g_warning ("%s", err->message);
+        return 1;
+    }
 
     manager.loop = g_main_loop_new(NULL, FALSE);
 

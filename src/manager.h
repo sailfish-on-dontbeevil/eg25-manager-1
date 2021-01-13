@@ -28,6 +28,7 @@ enum EG25State {
 struct EG25Manager {
     GMainLoop *loop;
     guint reset_timer;
+    gboolean manage_gnss;
 
     int at_fd;
     guint at_source;

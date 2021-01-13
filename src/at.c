@@ -268,7 +268,8 @@ void at_sequence_configure(struct EG25Manager *manager)
         append_at_command(manager, "QCFG", "apready", NULL, "1,0,500");
     }
     append_at_command(manager, "QURCCFG", "urcport", NULL, "\"usbat\"");
-    append_at_command(manager, "QGPS", NULL, NULL, "1");
+    if (manager->manage_gnss)
+        append_at_command(manager, "QGPS", NULL, NULL, "1");
     append_at_command(manager, "QSCLK", NULL, "1", NULL);
     // Make sure URC cache is disabled
     append_at_command(manager, "QCFG", "urc/cache", "0", NULL);
@@ -277,7 +278,8 @@ void at_sequence_configure(struct EG25Manager *manager)
 
 void at_sequence_suspend(struct EG25Manager *manager)
 {
-    append_at_command(manager, "QGPSEND", NULL, NULL, NULL);
+    if (manager->manage_gnss)
+        append_at_command(manager, "QGPSEND", NULL, NULL, NULL);
     append_at_command(manager, "QCFG", "urc/cache", "1", NULL);
     send_at_command(manager);
 }
@@ -285,7 +287,8 @@ void at_sequence_suspend(struct EG25Manager *manager)
 void at_sequence_resume(struct EG25Manager *manager)
 {
     append_at_command(manager, "QCFG", "urc/cache", "0", NULL);
-    append_at_command(manager, "QGPS", NULL, "1", NULL);
+    if (manager->manage_gnss)
+        append_at_command(manager, "QGPS", NULL, "1", NULL);
     send_at_command(manager);
 }
 
