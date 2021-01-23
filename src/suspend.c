@@ -99,8 +99,18 @@ static void signal_cb(GDBusProxy *proxy,
         g_message("system is resuming");
         take_inhibitor(manager);
         modem_resume_pre(manager);
-        manager->modem_state = EG25_STATE_RESUMING;
-        manager->suspend_timer = g_timeout_add_seconds(9, G_SOURCE_FUNC(check_modem_resume), manager);
+        if (manager->mm_modem) {
+            /*
+             * On some systems ModemManager doesn't handle suspend/resume, so
+             * we still have a valid/managed modem when resuming. In this case,
+             * do the whole resume sequence immediately.
+             */
+            manager->modem_state = EG25_STATE_CONFIGURED;
+            modem_resume_post(manager);
+        } else {
+            manager->modem_state = EG25_STATE_RESUMING;
+            manager->suspend_timer = g_timeout_add_seconds(9, G_SOURCE_FUNC(check_modem_resume), manager);
+        }
     }
 }
 
