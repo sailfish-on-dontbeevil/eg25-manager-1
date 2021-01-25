@@ -167,12 +167,24 @@ static void mm_appeared_cb(GDBusConnection    *connection,
                    NULL, (GAsyncReadyCallback)mm_manager_new_cb, manager);
 }
 
+static void mm_iface_clean(struct EG25Manager *manager)
+{
+    if (manager->mm_manager) {
+        g_clear_object(&manager->mm_manager);
+        manager->mm_manager = NULL;
+    }
+    if (manager->modem_usb_id) {
+        g_free(manager->modem_usb_id);
+        manager->modem_usb_id = NULL;
+    }
+}
+
 static void mm_vanished_cb(GDBusConnection    *connection,
                            const gchar        *name,
                            struct EG25Manager *manager)
 {
     g_message("ModemManager vanished from D-Bus");
-    mm_iface_destroy(manager);
+    mm_iface_clean(manager);
 }
 
 void mm_iface_init(struct EG25Manager *manager)
@@ -186,14 +198,7 @@ void mm_iface_init(struct EG25Manager *manager)
 
 void mm_iface_destroy(struct EG25Manager *manager)
 {
-    if (manager->mm_manager) {
-        g_clear_object(&manager->mm_manager);
-        manager->mm_manager = NULL;
-    }
-    if (manager->modem_usb_id) {
-        g_free(manager->modem_usb_id);
-        manager->modem_usb_id = NULL;
-    }
+    mm_iface_clean(manager);
     if (manager->mm_watch != 0) {
         g_bus_unwatch_name(manager->mm_watch);
         manager->mm_watch = 0;
