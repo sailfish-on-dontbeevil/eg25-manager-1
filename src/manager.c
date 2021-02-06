@@ -178,7 +178,7 @@ void modem_suspend_post(struct EG25Manager *manager)
 {
     gpio_sequence_suspend(manager);
     g_message("suspend sequence is over, drop inhibitor");
-    suspend_inhibit(manager, FALSE);
+    suspend_inhibit(manager, FALSE, FALSE);
 }
 
 void modem_resume_pre(struct EG25Manager *manager)
@@ -205,7 +205,8 @@ int main(int argc, char *argv[])
 
     memset(&manager, 0, sizeof(manager));
     manager.at_fd = -1;
-    manager.suspend_inhibit_fd = -1;
+    manager.delay_inhibit_fd = -1;
+    manager.block_inhibit_fd = -1;
 
     opt_context = g_option_context_new ("- Power management for the Quectel EG25 modem");
     g_option_context_add_main_entries (opt_context, options, NULL);

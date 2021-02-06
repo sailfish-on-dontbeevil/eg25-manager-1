@@ -11,4 +11,4 @@
 void suspend_init (struct EG25Manager *data);
 void suspend_destroy (struct EG25Manager *data);
 
-void suspend_inhibit (struct EG25Manager *data, gboolean inhibit);
+void suspend_inhibit (struct EG25Manager *data, gboolean inhibit, gboolean block);

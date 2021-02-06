@@ -43,8 +43,10 @@ struct EG25Manager {
     MMModem *mm_modem;
 
     GDBusProxy *suspend_proxy;
-    int suspend_inhibit_fd;
+    int delay_inhibit_fd;
+    int block_inhibit_fd;
     guint suspend_timer;
+    guint boot_timer;
 
     GUdevClient *udev;
 
