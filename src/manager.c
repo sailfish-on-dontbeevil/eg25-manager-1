@@ -8,6 +8,7 @@
 #include "gpio.h"
 #include "manager.h"
 #include "mm-iface.h"
+#include "ofono-iface.h"
 #include "suspend.h"
 #include "udev.h"
 
@@ -35,6 +36,7 @@ static gboolean quit_app(struct EG25Manager *manager)
 
     at_destroy(manager);
     mm_iface_destroy(manager);
+    ofono_iface_destroy(manager);
     suspend_destroy(manager);
     udev_destroy(manager);
 
@@ -130,6 +132,14 @@ void modem_reset(struct EG25Manager *manager)
 
     if (manager->reset_timer)
         return;
+
+    /*
+     * If we are managing the modem through lets say ofono, we should not
+     * reset the modem based on the availability of USB ID
+     * TODO: Improve ofono plugin and add support for fetching USB ID
+     */
+    if (manager->modem_iface != MODEM_IFACE_MODEMMANAGER)
+        return;        
 
     if (manager->modem_recovery_timer) {
         g_source_remove(manager->modem_recovery_timer);
@@ -305,6 +315,7 @@ int main(int argc, char *argv[])
     at_init(&manager, toml_table_in(toml_config, "at"));
     gpio_init(&manager, toml_table_in(toml_config, "gpio"));
     mm_iface_init(&manager, toml_table_in(toml_config, "mm-iface"));
+    ofono_iface_init(&manager);
     suspend_init(&manager, toml_table_in(toml_config, "suspend"));
     udev_init(&manager, toml_table_in(toml_config, "udev"));
 

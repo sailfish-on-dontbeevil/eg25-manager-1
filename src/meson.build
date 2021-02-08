@@ -11,6 +11,7 @@ executable (
         'gpio.c', 'gpio.h',
         'manager.c', 'manager.h',
         'mm-iface.c', 'mm-iface.h',
+        'ofono-iface.c', 'ofono-iface.h',
         'suspend.c', 'suspend.h',
         'toml.c', 'toml.h',
         'udev.c', 'udev.h',

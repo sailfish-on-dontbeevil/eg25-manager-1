@@ -163,6 +163,12 @@ static void mm_appeared_cb(GDBusConnection    *connection,
 {
     g_message("ModemManager appeared on D-Bus");
 
+    if (manager->modem_iface != MODEM_IFACE_NONE) {
+        g_critical("Modem interface already found! Make sure to only run either of ModemManager or oFono.");
+        return;
+    }
+    manager->modem_iface = MODEM_IFACE_MODEMMANAGER;
+
     mm_manager_new(connection, G_DBUS_OBJECT_MANAGER_CLIENT_FLAGS_NONE,
                    NULL, (GAsyncReadyCallback)mm_manager_new_cb, manager);
 }
