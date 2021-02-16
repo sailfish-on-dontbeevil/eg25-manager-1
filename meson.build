@@ -27,6 +27,7 @@ prefix = get_option('prefix')
 datadir = get_option('datadir')
 sysconfdir = get_option('sysconfdir')
 bindir = join_paths(prefix, get_option('bindir'))
+udevrulesdir = join_paths(prefix, 'lib/udev/rules.d')
 
 if datadir.startswith('/')
   full_datadir = datadir
@@ -50,3 +51,4 @@ mgr_deps = [
 ]
 
 subdir('src')
+subdir('udev')
