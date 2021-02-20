@@ -8,5 +8,5 @@
 
 #include "manager.h"
 
-void udev_init (struct EG25Manager *data);
+void udev_init (struct EG25Manager *data, toml_table_t *config);
 void udev_destroy (struct EG25Manager *data);

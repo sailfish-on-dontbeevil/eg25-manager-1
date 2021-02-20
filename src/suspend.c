@@ -16,7 +16,6 @@
 #define SD_NAME         "org.freedesktop.login1"
 #define SD_PATH         "/org/freedesktop/login1"
 #define SD_INTERFACE    "org.freedesktop.login1.Manager"
-#define FULL_BOOT_DELAY 120
 
 static gboolean check_modem_resume(struct EG25Manager *manager)
 {
@@ -107,7 +106,7 @@ static void inhibit_done_block(GObject *source,
  */
 static gboolean modem_fully_booted(struct EG25Manager *manager)
 {
-    g_message("Modem is up for %d seconds and fully ready", FULL_BOOT_DELAY);
+    g_message("Modem is up for %u seconds and fully ready", manager->modem_boot_timeout);
     manager->modem_boot_timer = 0;
     drop_inhibitor(manager, TRUE);
 
@@ -130,7 +129,7 @@ static void take_inhibitor(struct EG25Manager *manager, gboolean block)
         g_dbus_proxy_call_with_unix_fd_list(manager->suspend_proxy, "Inhibit",
                                             variant_arg, 0, G_MAXINT, NULL, NULL,
                                             inhibit_done_block, manager);
-        manager->modem_boot_timer = g_timeout_add_seconds(FULL_BOOT_DELAY,
+        manager->modem_boot_timer = g_timeout_add_seconds(manager->modem_boot_timeout,
                                                           G_SOURCE_FUNC(modem_fully_booted),
                                                           manager);
     }
@@ -181,7 +180,7 @@ static void signal_cb(GDBusProxy *proxy,
             modem_resume_post(manager);
         } else {
             manager->modem_state = EG25_STATE_RESUMING;
-            manager->modem_recovery_timer = g_timeout_add_seconds(9,
+            manager->modem_recovery_timer = g_timeout_add_seconds(manager->modem_recovery_timeout,
                                                                   G_SOURCE_FUNC(check_modem_resume),
                                                                   manager);
         }
@@ -232,8 +231,25 @@ static void on_proxy_acquired(GObject *object,
     }
 }
 
-void suspend_init(struct EG25Manager *manager)
+void suspend_init(struct EG25Manager *manager, toml_table_t *config)
 {
+    toml_datum_t timeout_value;
+
+    if (config) {
+        timeout_value = toml_int_in(config, "boot_timeout");
+        if (timeout_value.ok)
+            manager->modem_boot_timeout = (guint)timeout_value.u.i;
+
+        timeout_value = toml_int_in(config, "recovery_timeout");
+        if (timeout_value.ok)
+            manager->modem_recovery_timeout = (guint)timeout_value.u.i;
+    }
+
+    if (manager->modem_boot_timeout == 0)
+        manager->modem_boot_timeout = 120;
+    if (manager->modem_recovery_timeout == 0)
+        manager->modem_recovery_timeout = 9;
+
     g_dbus_proxy_new_for_bus(G_BUS_TYPE_SYSTEM,
                              G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |
                              G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES,

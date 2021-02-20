@@ -25,7 +25,7 @@ static void udev_event_cb(GUdevClient *client, gchar *action, GUdevDevice *devic
     }
 }
 
-void udev_init (struct EG25Manager *manager)
+void udev_init (struct EG25Manager *manager, toml_table_t *config)
 {
     const char * const subsystems[] = { "usb", NULL };
 

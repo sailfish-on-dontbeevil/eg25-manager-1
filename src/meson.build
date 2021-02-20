@@ -12,6 +12,7 @@ executable (
         'manager.c', 'manager.h',
         'mm-iface.c', 'mm-iface.h',
         'suspend.c', 'suspend.h',
+        'toml.c', 'toml.h',
         'udev.c', 'udev.h',
     ],
     dependencies : mgr_deps,

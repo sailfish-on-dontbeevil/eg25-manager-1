@@ -11,6 +11,8 @@
 #include <gudev/gudev.h>
 #include <libmm-glib.h>
 
+#include "toml.h"
+
 enum EG25State {
     EG25_STATE_INIT = 0,
     EG25_STATE_POWERED, // Power-on sequence has been executed, but the modem isn't on yet
@@ -28,7 +30,9 @@ enum EG25State {
 struct EG25Manager {
     GMainLoop *loop;
     guint reset_timer;
-    gboolean manage_gnss;
+    gboolean use_libusb;
+    guint usb_vid;
+    guint usb_pid;
 
     int at_fd;
     guint at_source;
@@ -36,7 +40,6 @@ struct EG25Manager {
 
     enum EG25State modem_state;
     gchar *modem_usb_id;
-    gboolean braveheart;
 
     guint mm_watch;
     MMManager *mm_manager;
@@ -47,7 +50,9 @@ struct EG25Manager {
     int suspend_block_fd;
 
     guint modem_recovery_timer;
+    guint modem_recovery_timeout;
     guint modem_boot_timer;
+    guint modem_boot_timeout;
 
     GUdevClient *udev;
 

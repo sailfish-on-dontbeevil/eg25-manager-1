@@ -8,7 +8,7 @@
 
 #include "manager.h"
 
-int at_init(struct EG25Manager *data);
+int at_init(struct EG25Manager *data, toml_table_t *config);
 void at_destroy(struct EG25Manager *data);
 
 void at_sequence_configure(struct EG25Manager *data);

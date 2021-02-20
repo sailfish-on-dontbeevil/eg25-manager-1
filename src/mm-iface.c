@@ -187,7 +187,7 @@ static void mm_vanished_cb(GDBusConnection    *connection,
     mm_iface_clean(manager);
 }
 
-void mm_iface_init(struct EG25Manager *manager)
+void mm_iface_init(struct EG25Manager *manager, toml_table_t *config)
 {
     manager->mm_watch = g_bus_watch_name(G_BUS_TYPE_SYSTEM, MM_DBUS_SERVICE,
                                          G_BUS_NAME_WATCHER_FLAGS_AUTO_START,
