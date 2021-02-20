@@ -21,7 +21,7 @@
 static gboolean check_modem_resume(struct EG25Manager *manager)
 {
     g_message("Modem wasn't probed in time, restart it!");
-    manager->suspend_timer = 0;
+    manager->modem_recovery_timer = 0;
     modem_reset(manager);
 
     return FALSE;
@@ -30,18 +30,18 @@ static gboolean check_modem_resume(struct EG25Manager *manager)
 static gboolean drop_inhibitor(struct EG25Manager *manager, gboolean block)
 {
     if (block) {
-        if (manager->block_inhibit_fd >= 0) {
+        if (manager->suspend_block_fd >= 0) {
             g_message("dropping systemd sleep block inhibitor");
-            close(manager->block_inhibit_fd);
-            manager->block_inhibit_fd = -1;
+            close(manager->suspend_block_fd);
+            manager->suspend_block_fd = -1;
             return TRUE;
         }
     }
     else {
-        if (manager->delay_inhibit_fd >= 0) {
+        if (manager->suspend_delay_fd >= 0) {
             g_message("dropping systemd sleep delay inhibitor");
-            close(manager->delay_inhibit_fd);
-            manager->delay_inhibit_fd = -1;
+            close(manager->suspend_delay_fd);
+            manager->suspend_delay_fd = -1;
             return TRUE;
         }
     }
@@ -49,8 +49,8 @@ static gboolean drop_inhibitor(struct EG25Manager *manager, gboolean block)
 }
 
 static void inhibit_done_delay(GObject *source,
-                         GAsyncResult *result,
-                         gpointer user_data)
+                               GAsyncResult *result,
+                               gpointer user_data)
 {
     GDBusProxy *suspend_proxy = G_DBUS_PROXY(source);
     struct EG25Manager *manager = user_data;
@@ -58,24 +58,25 @@ static void inhibit_done_delay(GObject *source,
     GVariant *res;
     GUnixFDList *fd_list;
 
-    res = g_dbus_proxy_call_with_unix_fd_list_finish(suspend_proxy, &fd_list, result, &error);
+    res = g_dbus_proxy_call_with_unix_fd_list_finish(suspend_proxy, &fd_list,
+                                                     result, &error);
     if (!res) {
         g_warning("inhibit failed: %s", error->message);
     } else {
         if (!fd_list || g_unix_fd_list_get_length(fd_list) != 1)
             g_warning("didn't get a single fd back");
 
-        manager->delay_inhibit_fd = g_unix_fd_list_get(fd_list, 0, NULL);
+        manager->suspend_delay_fd = g_unix_fd_list_get(fd_list, 0, NULL);
 
-        g_message("inhibitor sleep fd is %d", manager->delay_inhibit_fd);
+        g_message("inhibitor sleep fd is %d", manager->suspend_delay_fd);
         g_object_unref(fd_list);
         g_variant_unref(res);
     }
 }
 
 static void inhibit_done_block(GObject *source,
-                         GAsyncResult *result,
-                         gpointer user_data)
+                               GAsyncResult *result,
+                               gpointer user_data)
 {
     GDBusProxy *suspend_proxy = G_DBUS_PROXY(source);
     struct EG25Manager *manager = user_data;
@@ -83,16 +84,17 @@ static void inhibit_done_block(GObject *source,
     GVariant *res;
     GUnixFDList *fd_list;
 
-    res = g_dbus_proxy_call_with_unix_fd_list_finish(suspend_proxy, &fd_list, result, &error);
+    res = g_dbus_proxy_call_with_unix_fd_list_finish(suspend_proxy, &fd_list,
+                                                     result, &error);
     if (!res) {
         g_warning("inhibit failed: %s", error->message);
     } else {
         if (!fd_list || g_unix_fd_list_get_length(fd_list) != 1)
             g_warning("didn't get a single fd back");
 
-        manager->block_inhibit_fd = g_unix_fd_list_get(fd_list, 0, NULL);
+        manager->suspend_block_fd = g_unix_fd_list_get(fd_list, 0, NULL);
 
-        g_message("inhibitor block fd is %d", manager->block_inhibit_fd);
+        g_message("inhibitor block fd is %d", manager->suspend_block_fd);
         g_object_unref(fd_list);
         g_variant_unref(res);
     }
@@ -106,7 +108,7 @@ static void inhibit_done_block(GObject *source,
 static gboolean modem_fully_booted(struct EG25Manager *manager)
 {
     g_message("Modem is up for %d seconds and fully ready", FULL_BOOT_DELAY);
-    manager->boot_timer = 0;
+    manager->modem_boot_timer = 0;
     drop_inhibitor(manager, TRUE);
 
     return FALSE;
@@ -117,28 +119,33 @@ static void take_inhibitor(struct EG25Manager *manager, gboolean block)
     GVariant *variant_arg;
 
     if (block) {
-        if(manager->block_inhibit_fd != -1)
+        if(manager->suspend_block_fd != -1)
             drop_inhibitor(manager, TRUE);
 
         variant_arg = g_variant_new ("(ssss)", "sleep", "eg25manager",
-                                     "eg25manager needs to wait for modem to be fully booted", "block");
+                                     "eg25manager needs to wait for modem to be fully booted",
+                                     "block");
 
-        g_message("taking systemd sleep block inhibitor");
-        g_dbus_proxy_call_with_unix_fd_list(manager->suspend_proxy, "Inhibit", variant_arg,
-                                            0, G_MAXINT, NULL, NULL, inhibit_done_block, manager);
-        g_message("scheduling block inhibitor release");
-        manager->boot_timer = g_timeout_add_seconds(FULL_BOOT_DELAY, G_SOURCE_FUNC(modem_fully_booted), manager);
+        g_message("taking systemd sleep inhibitor (blocking)");
+        g_dbus_proxy_call_with_unix_fd_list(manager->suspend_proxy, "Inhibit",
+                                            variant_arg, 0, G_MAXINT, NULL, NULL,
+                                            inhibit_done_block, manager);
+        manager->modem_boot_timer = g_timeout_add_seconds(FULL_BOOT_DELAY,
+                                                          G_SOURCE_FUNC(modem_fully_booted),
+                                                          manager);
     }
     else {
-        if(manager->delay_inhibit_fd != -1)
+        if(manager->suspend_delay_fd != -1)
             drop_inhibitor(manager, FALSE);
 
         variant_arg = g_variant_new ("(ssss)", "sleep", "eg25manager",
-                                     "eg25manager needs to prepare modem for sleep", "delay");
+                                     "eg25manager needs to prepare modem for sleep",
+                                     "delay");
 
-        g_message("taking systemd sleep delay inhibitor");
-        g_dbus_proxy_call_with_unix_fd_list(manager->suspend_proxy, "Inhibit", variant_arg,
-                                            0, G_MAXINT, NULL, NULL, inhibit_done_delay, manager);
+        g_message("taking systemd sleep inhibitor");
+        g_dbus_proxy_call_with_unix_fd_list(manager->suspend_proxy, "Inhibit",
+                                            variant_arg, 0, G_MAXINT, NULL, NULL,
+                                            inhibit_done_delay, manager);
     }
 }
 
@@ -174,7 +181,9 @@ static void signal_cb(GDBusProxy *proxy,
             modem_resume_post(manager);
         } else {
             manager->modem_state = EG25_STATE_RESUMING;
-            manager->suspend_timer = g_timeout_add_seconds(9, G_SOURCE_FUNC(check_modem_resume), manager);
+            manager->modem_recovery_timer = g_timeout_add_seconds(9,
+                                                                  G_SOURCE_FUNC(check_modem_resume),
+                                                                  manager);
         }
     }
 }
@@ -211,8 +220,10 @@ static void on_proxy_acquired(GObject *object,
         return;
     }
 
-    g_signal_connect(manager->suspend_proxy, "notify::g-name-owner", G_CALLBACK(name_owner_cb), manager);
-    g_signal_connect(manager->suspend_proxy, "g-signal", G_CALLBACK(signal_cb), manager);
+    g_signal_connect(manager->suspend_proxy, "notify::g-name-owner",
+                     G_CALLBACK(name_owner_cb), manager);
+    g_signal_connect(manager->suspend_proxy, "g-signal",
+                     G_CALLBACK(signal_cb), manager);
 
     owner = g_dbus_proxy_get_name_owner(manager->suspend_proxy);
     if (owner) {
@@ -234,13 +245,13 @@ void suspend_destroy(struct EG25Manager *manager)
 {
     drop_inhibitor(manager, FALSE);
     drop_inhibitor(manager, TRUE);
-    if (manager->suspend_timer) {
-        g_source_remove(manager->suspend_timer);
-        manager->suspend_timer = 0;
+    if (manager->modem_recovery_timer) {
+        g_source_remove(manager->modem_recovery_timer);
+        manager->modem_recovery_timer = 0;
     }
-    if (manager->boot_timer) {
-        g_source_remove(manager->boot_timer);
-        manager->boot_timer = 0;
+    if (manager->modem_boot_timer) {
+        g_source_remove(manager->modem_boot_timer);
+        manager->modem_boot_timer = 0;
     }
     if (manager->suspend_proxy) {
         g_object_unref(manager->suspend_proxy);

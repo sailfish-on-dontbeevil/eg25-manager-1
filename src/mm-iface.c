@@ -35,9 +35,9 @@ static void add_modem(struct EG25Manager *manager, GDBusObject *object)
     g_assert(manager->mm_modem != NULL);
 
     if (manager->modem_state == EG25_STATE_RESUMING) {
-        if (manager->suspend_timer) {
-            g_source_remove(manager->suspend_timer);
-            manager->suspend_timer = 0;
+        if (manager->modem_recovery_timer) {
+            g_source_remove(manager->modem_recovery_timer);
+            manager->modem_recovery_timer = 0;
         }
         modem_resume_post(manager);
         manager->modem_state = EG25_STATE_CONFIGURED;

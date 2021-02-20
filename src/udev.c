@@ -12,8 +12,11 @@ static void udev_event_cb(GUdevClient *client, gchar *action, GUdevDevice *devic
 {
     struct EG25Manager *manager = data;
 
-    if (strcmp(action, "unbind") != 0 || manager->modem_state == EG25_STATE_RESETTING || !manager->modem_usb_id)
+    if (strcmp(action, "unbind") != 0 ||
+        manager->modem_state == EG25_STATE_RESETTING ||
+        !manager->modem_usb_id) {
         return;
+    }
 
     if (strncmp(g_udev_device_get_name(device), manager->modem_usb_id, strlen(manager->modem_usb_id)) == 0 &&
         manager->reset_timer == 0) {

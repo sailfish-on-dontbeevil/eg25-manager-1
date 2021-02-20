@@ -126,9 +126,9 @@ void modem_reset(struct EG25Manager *manager)
     if (manager->reset_timer)
         return;
 
-    if (manager->suspend_timer) {
-        g_source_remove(manager->suspend_timer);
-        manager->suspend_timer = 0;
+    if (manager->modem_recovery_timer) {
+        g_source_remove(manager->modem_recovery_timer);
+        manager->modem_recovery_timer = 0;
     }
 
     if (!manager->modem_usb_id) {
@@ -205,8 +205,8 @@ int main(int argc, char *argv[])
 
     memset(&manager, 0, sizeof(manager));
     manager.at_fd = -1;
-    manager.delay_inhibit_fd = -1;
-    manager.block_inhibit_fd = -1;
+    manager.suspend_delay_fd = -1;
+    manager.suspend_block_fd = -1;
 
     opt_context = g_option_context_new ("- Power management for the Quectel EG25 modem");
     g_option_context_add_main_entries (opt_context, options, NULL);
