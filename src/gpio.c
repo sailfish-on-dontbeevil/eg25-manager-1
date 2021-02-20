@@ -22,33 +22,10 @@ enum {
     GPIO_OUT_COUNT
 };
 
-static unsigned gpio_out_idx_bh[] = {
-    358,
-    35,
-    68,
-    231,
-    232
-};
-
-static unsigned gpio_out_idx_ce[] = {
-    34,
-    35,
-    68,
-    231,
-    232
-};
 
 enum {
     GPIO_IN_STATUS = 0,
     GPIO_IN_COUNT
-};
-
-static unsigned gpio_in_idx_bh[] = {
-    GPIO_IDX_INVAL,
-};
-
-static unsigned gpio_in_idx_ce[] = {
-    233,
 };
 
 int gpio_sequence_poweron(struct EG25Manager *manager)
@@ -92,11 +69,24 @@ int gpio_sequence_resume(struct EG25Manager *manager)
     return 0;
 }
 
+static guint get_config_gpio(toml_table_t *config, const char *id)
+{
+    toml_datum_t value = toml_int_in(config, id);
+    guint gpio;
+
+    if (!value.ok)
+        return GPIO_IDX_INVAL;
+
+    gpio = (guint)value.u.i;
+
+    return gpio;
+}
+
 int gpio_init(struct EG25Manager *manager, toml_table_t *config)
 {
     int i, ret;
-    unsigned *gpio_in_idx;
-    unsigned *gpio_out_idx;
+    guint gpio_out_idx[GPIO_OUT_COUNT];
+    guint gpio_in_idx[GPIO_IN_COUNT];
 
     manager->gpiochip[0] = gpiod_chip_open_by_label(GPIO_CHIP1_LABEL);
     if (!manager->gpiochip[0]) {
@@ -110,16 +100,15 @@ int gpio_init(struct EG25Manager *manager, toml_table_t *config)
         return 1;
     }
 
-    if (manager->braveheart) {
-        gpio_in_idx = gpio_in_idx_bh;
-        gpio_out_idx = gpio_out_idx_bh;
-    } else {
-        gpio_in_idx = gpio_in_idx_ce;
-        gpio_out_idx = gpio_out_idx_ce;
-    }
+    gpio_out_idx[GPIO_OUT_DTR] = get_config_gpio(config, "dtr");
+    gpio_out_idx[GPIO_OUT_PWRKEY] = get_config_gpio(config, "pwrkey");
+    gpio_out_idx[GPIO_OUT_RESET] = get_config_gpio(config, "reset");
+    gpio_out_idx[GPIO_OUT_APREADY] = get_config_gpio(config, "apready");
+    gpio_out_idx[GPIO_OUT_DISABLE] = get_config_gpio(config, "disable");
+    gpio_in_idx[GPIO_IN_STATUS] = get_config_gpio(config, "status");
 
     for (i = 0; i < GPIO_OUT_COUNT; i++) {
-        unsigned int offset, chipidx;
+        guint offset, chipidx;
 
         if (gpio_out_idx[i] < MAX_GPIOCHIP_LINES) {
             offset = gpio_out_idx[i];
@@ -143,7 +132,7 @@ int gpio_init(struct EG25Manager *manager, toml_table_t *config)
     }
 
     for (i = 0; i < GPIO_IN_COUNT; i++) {
-        unsigned int offset, chipidx;
+        guint offset, chipidx;
 
         if (gpio_in_idx[i] == GPIO_IDX_INVAL)
             continue;
