@@ -51,7 +51,9 @@ struct EG25Manager {
     int suspend_block_fd;
 
     guint modem_recovery_timer;
+    guint modem_recovery_timeout;
     guint modem_boot_timer;
+    guint modem_boot_timeout;
 
     GUdevClient *udev;
 
