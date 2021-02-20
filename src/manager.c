@@ -19,8 +19,6 @@
 #include <glib-unix.h>
 #include <libusb.h>
 
-#define EG25_USB_VID 0x2c7c
-#define EG25_USB_PID 0x0125
 #ifndef EG25_CONFDIR
 #define EG25_CONFDIR "/etc/eg25-manager"
 #endif
@@ -65,14 +63,14 @@ static gboolean modem_start(struct EG25Manager *manager)
     libusb_device **devices = NULL;
     struct libusb_device_descriptor desc;
 
-    if (manager->braveheart) {
+    if (manager->use_libusb) {
         // BH don't have the STATUS line connected, so check if USB device is present
         libusb_init(&ctx);
 
         count = libusb_get_device_list(ctx, &devices);
         for (i = 0; i < count; i++) {
             libusb_get_device_descriptor(devices[i], &desc);
-            if (desc.idVendor == EG25_USB_VID && desc.idProduct == EG25_USB_PID) {
+            if (desc.idVendor == manager->usb_vid && desc.idProduct == manager->usb_pid) {
                 g_message("Found corresponding USB device, modem already powered");
                 should_boot = FALSE;
                 break;
@@ -266,6 +264,7 @@ int main(int argc, char *argv[])
     struct EG25Manager manager;
     gchar *config_file = NULL;
     toml_table_t *toml_config;
+    toml_table_t *toml_manager;
     toml_datum_t toml_value;
     const GOptionEntry options[] = {
         { "gnss", 'g', 0, G_OPTION_ARG_NONE, &manager.manage_gnss, "Manage the GNSS feature.", NULL },
@@ -288,6 +287,21 @@ int main(int argc, char *argv[])
     manager.loop = g_main_loop_new(NULL, FALSE);
 
     toml_config = parse_config_file(config_file);
+
+    toml_manager = toml_table_in(toml_config, "manager");
+    if (toml_manager) {
+        toml_value = toml_bool_in(toml_manager, "need_libusb");
+        if (toml_value.ok)
+            manager.use_libusb = toml_value.u.b;
+
+        toml_value = toml_int_in(toml_manager, "usb_vid");
+        if (toml_value.ok)
+            manager.usb_vid = toml_value.u.i;
+
+        toml_value = toml_int_in(toml_manager, "usb_pid");
+        if (toml_value.ok)
+            manager.usb_pid = toml_value.u.i;
+    }
 
     at_init(&manager, toml_table_in(toml_config, "at"));
     gpio_init(&manager, toml_table_in(toml_config, "gpio"));

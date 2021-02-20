@@ -31,6 +31,9 @@ struct EG25Manager {
     GMainLoop *loop;
     guint reset_timer;
     gboolean manage_gnss;
+    gboolean use_libusb;
+    guint usb_vid;
+    guint usb_pid;
 
     int at_fd;
     guint at_source;
@@ -38,7 +41,6 @@ struct EG25Manager {
 
     enum EG25State modem_state;
     gchar *modem_usb_id;
-    gboolean braveheart;
 
     guint mm_watch;
     MMManager *mm_manager;
