@@ -30,7 +30,6 @@ enum EG25State {
 struct EG25Manager {
     GMainLoop *loop;
     guint reset_timer;
-    gboolean manage_gnss;
     gboolean use_libusb;
     guint usb_vid;
     guint usb_pid;

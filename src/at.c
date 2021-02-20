@@ -16,8 +16,6 @@
 
 #include <glib-unix.h>
 
-#define MODEM_UART "/dev/ttyS2"
-
 struct AtCommand {
     char *cmd;
     char *subcmd;
@@ -25,6 +23,11 @@ struct AtCommand {
     char *expected;
     int retries;
 };
+
+static GArray *configure_commands = NULL;
+static GArray *suspend_commands = NULL;
+static GArray *resume_commands = NULL;
+static GArray *reset_commands = NULL;
 
 static int configure_serial(const char *tty)
 {
@@ -218,15 +221,85 @@ static gboolean modem_response(gint fd,
     return TRUE;
 }
 
+static void parse_commands_list(toml_array_t *array, GArray **cmds)
+{
+    int len;
+
+    len = toml_array_nelem(array);
+    *cmds = g_array_new(FALSE, TRUE, sizeof(struct AtCommand));
+    g_array_set_size(*cmds, (guint)len);
+    for (int i = 0; i < len; i++) {
+        struct AtCommand *cmd = &g_array_index(*cmds, struct AtCommand, i);
+        toml_table_t *table = toml_table_at(array, i);
+        toml_datum_t value;
+
+        if (!table)
+            continue;
+
+        value = toml_string_in(table, "cmd");
+        if (value.ok) {
+            cmd->cmd = g_strdup(value.u.s);
+            free(value.u.s);
+        }
+
+        value = toml_string_in(table, "subcmd");
+        if (value.ok) {
+            cmd->subcmd = g_strdup(value.u.s);
+            free(value.u.s);
+        }
+
+        value = toml_string_in(table, "value");
+        if (value.ok) {
+            cmd->value = g_strdup(value.u.s);
+            free(value.u.s);
+        }
+
+        value = toml_string_in(table, "expect");
+        if (value.ok) {
+            cmd->expected = g_strdup(value.u.s);
+            free(value.u.s);
+        }
+    }
+}
+
 int at_init(struct EG25Manager *manager, toml_table_t *config)
 {
-    manager->at_fd = configure_serial(MODEM_UART);
+    toml_array_t *commands;
+    toml_datum_t uart_port;
+
+    uart_port = toml_string_in(config, "uart");
+    if (!uart_port.ok)
+        g_error("Configuration file lacks UART port definition");
+
+    manager->at_fd = configure_serial(uart_port.u.s);
     if (manager->at_fd < 0) {
-        g_critical("Unable to configure %s", MODEM_UART);
+        g_critical("Unable to configure %s", uart_port.u.s);
+        free(uart_port.u.s);
         return 1;
     }
+    free(uart_port.u.s);
 
     manager->at_source = g_unix_fd_add(manager->at_fd, G_IO_IN, modem_response, manager);
+
+    commands = toml_array_in(config, "configure");
+    if (!commands)
+        g_error("Configuration file lacks initial AT commands list");
+    parse_commands_list(commands, &configure_commands);
+
+    commands = toml_array_in(config, "suspend");
+    if (!commands)
+        g_error("Configuration file lacks suspend AT commands list");
+    parse_commands_list(commands, &suspend_commands);
+
+    commands = toml_array_in(config, "resume");
+    if (!commands)
+        g_error("Configuration file lacks resume AT commands list");
+    parse_commands_list(commands, &resume_commands);
+
+    commands = toml_array_in(config, "reset");
+    if (!commands)
+        g_error("Configuration file lacks reset AT commands list");
+    parse_commands_list(commands, &reset_commands);
 
     return 0;
 }
@@ -236,66 +309,45 @@ void at_destroy(struct EG25Manager *manager)
     g_source_remove(manager->at_source);
     if (manager->at_fd > 0)
         close(manager->at_fd);
+
+    g_array_free(configure_commands, TRUE);
+    g_array_free(suspend_commands, TRUE);
+    g_array_free(resume_commands, TRUE);
+    g_array_free(reset_commands, TRUE);
 }
 
 void at_sequence_configure(struct EG25Manager *manager)
 {
-    /*
-     * Default parameters in megi's driver which differ with our own:
-     *   - urc/ri/x are always set the same way on both BH and CE
-     *   - urc/ri/x pulse duration is 1 ms and urc/delay is 0 (no need to delay
-     *     URCs if the pulse is that short, so this is expected)
-     *   - apready is disabled
-     *
-     * Parameters set in megi's kernel but not here:
-     *   - sleepind/level = 0
-     *   - wakeupin/level = 0
-     *   - ApRstLevel = 0
-     *   - ModemRstLevel = 0
-     *   - airplanecontrol = 1
-     *   - fast/poweroff = 1
-     * (those would need to be researched to check their usefulness for our
-     * use-case)
-     */
-
-    append_at_command(manager, "QDAI", NULL, NULL, "1,1,0,1,0,0,1,1");
-    append_at_command(manager, "QCFG", "risignaltype", NULL, "\"physical\"");
-    append_at_command(manager, "QCFG", "ims", NULL, "1");
-    if (manager->braveheart) {
-        append_at_command(manager, "QCFG", "urc/ri/ring", NULL, "\"pulse\",2000,1000,5000,\"off\",1");
-        append_at_command(manager, "QCFG", "urc/ri/smsincoming", NULL, "\"pulse\",2000");
-        append_at_command(manager, "QCFG", "urc/ri/other", NULL, "\"off\",1");
-        append_at_command(manager, "QCFG", "urc/delay", NULL, "1");
-    } else {
-        append_at_command(manager, "QCFG", "apready", NULL, "1,0,500");
+    for (guint i = 0; i < configure_commands->len; i++) {
+        struct AtCommand *cmd = &g_array_index(configure_commands, struct AtCommand, i);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
     }
-    append_at_command(manager, "QURCCFG", "urcport", NULL, "\"usbat\"");
-    if (manager->manage_gnss)
-        append_at_command(manager, "QGPS", NULL, NULL, "1");
-    append_at_command(manager, "QSCLK", NULL, "1", NULL);
-    // Make sure URC cache is disabled
-    append_at_command(manager, "QCFG", "urc/cache", "0", NULL);
     send_at_command(manager);
 }
 
 void at_sequence_suspend(struct EG25Manager *manager)
 {
-    if (manager->manage_gnss)
-        append_at_command(manager, "QGPSEND", NULL, NULL, NULL);
-    append_at_command(manager, "QCFG", "urc/cache", "1", NULL);
+    for (guint i = 0; i < suspend_commands->len; i++) {
+        struct AtCommand *cmd = &g_array_index(suspend_commands, struct AtCommand, i);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
+    }
     send_at_command(manager);
 }
 
 void at_sequence_resume(struct EG25Manager *manager)
 {
-    append_at_command(manager, "QCFG", "urc/cache", "0", NULL);
-    if (manager->manage_gnss)
-        append_at_command(manager, "QGPS", NULL, "1", NULL);
+    for (guint i = 0; i < resume_commands->len; i++) {
+        struct AtCommand *cmd = &g_array_index(resume_commands, struct AtCommand, i);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
+    }
     send_at_command(manager);
 }
 
 void at_sequence_reset(struct EG25Manager *manager)
 {
-    append_at_command(manager, "CFUN", NULL, "1,1", NULL);
+    for (guint i = 0; i < reset_commands->len; i++) {
+        struct AtCommand *cmd = &g_array_index(reset_commands, struct AtCommand, i);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
+    }
     send_at_command(manager);
 }

@@ -267,7 +267,6 @@ int main(int argc, char *argv[])
     toml_table_t *toml_manager;
     toml_datum_t toml_value;
     const GOptionEntry options[] = {
-        { "gnss", 'g', 0, G_OPTION_ARG_NONE, &manager.manage_gnss, "Manage the GNSS feature.", NULL },
         { "config", 'c', 0, G_OPTION_ARG_STRING, &config_file, "Config file to use.", NULL },
         { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
     };
