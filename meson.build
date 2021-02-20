@@ -56,5 +56,6 @@ mgr_deps = [
     dependency('mm-glib'),
 ]
 
+subdir('data')
 subdir('src')
 subdir('udev')
