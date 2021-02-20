@@ -8,5 +8,5 @@
 
 #include "manager.h"
 
-void mm_iface_init(struct EG25Manager *data);
+void mm_iface_init(struct EG25Manager *data, toml_table_t *config);
 void mm_iface_destroy(struct EG25Manager *data);

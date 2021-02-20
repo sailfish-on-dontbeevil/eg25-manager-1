@@ -232,7 +232,7 @@ static void on_proxy_acquired(GObject *object,
     }
 }
 
-void suspend_init(struct EG25Manager *manager)
+void suspend_init(struct EG25Manager *manager, toml_table_t *config)
 {
     g_dbus_proxy_new_for_bus(G_BUS_TYPE_SYSTEM,
                              G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START |

@@ -6,7 +6,7 @@
 #
 
 project (
-  'eg25manager',
+  'eg25-manager',
   'c',
   version : '0.1.2',
   license : 'GPLv3+',
@@ -40,6 +40,12 @@ if sysconfdir.startswith('/')
 else
   full_sysconfdir = join_paths(prefix, sysconfdir)
 endif
+
+eg25_confdir = join_paths(full_sysconfdir, meson.project_name())
+eg25_datadir = join_paths(full_datadir, meson.project_name())
+
+add_global_arguments('-D@0@="@1@"'.format('EG25_CONFDIR', eg25_confdir), language : 'c')
+add_global_arguments('-D@0@="@1@"'.format('EG25_DATADIR', eg25_datadir), language : 'c')
 
 mgr_deps = [
     dependency('glib-2.0'),

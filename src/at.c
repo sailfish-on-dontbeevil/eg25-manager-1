@@ -218,7 +218,7 @@ static gboolean modem_response(gint fd,
     return TRUE;
 }
 
-int at_init(struct EG25Manager *manager)
+int at_init(struct EG25Manager *manager, toml_table_t *config)
 {
     manager->at_fd = configure_serial(MODEM_UART);
     if (manager->at_fd < 0) {

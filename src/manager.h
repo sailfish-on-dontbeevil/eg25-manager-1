@@ -11,6 +11,8 @@
 #include <gudev/gudev.h>
 #include <libmm-glib.h>
 
+#include "toml.h"
+
 enum EG25State {
     EG25_STATE_INIT = 0,
     EG25_STATE_POWERED, // Power-on sequence has been executed, but the modem isn't on yet

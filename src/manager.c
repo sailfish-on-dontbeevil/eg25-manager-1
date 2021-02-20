@@ -21,6 +21,13 @@
 
 #define EG25_USB_VID 0x2c7c
 #define EG25_USB_PID 0x0125
+#ifndef EG25_CONFDIR
+#define EG25_CONFDIR "/etc/eg25-manager"
+#endif
+
+#ifndef EG25_DATADIR
+#define EG25_DATADIR "/usr/share/eg25-manager"
+#endif
 
 static gboolean quit_app(struct EG25Manager *manager)
 {
@@ -198,15 +205,71 @@ void modem_resume_post(struct EG25Manager *manager)
     at_sequence_resume(manager);
 }
 
+static toml_table_t *parse_config_file(char *config_file)
+{
+    toml_table_t *toml_config;
+    gchar *compatible;
+    gchar error[256];
+    gsize len;
+    FILE *f = NULL;
+
+    if (config_file) {
+        f = fopen(config_file, "r");
+    } else if (g_file_get_contents("/proc/device-tree/compatible", &compatible, &len, NULL)) {
+        g_autoptr (GPtrArray) compat = g_ptr_array_new();
+        gsize pos = 0;
+
+        /*
+         * `compatible` file is a list of NULL-terminated strings, convert it
+         * to an array
+         */
+        do {
+            g_ptr_array_add(compat, &compatible[pos]);
+            pos += strlen(&compatible[pos]) + 1;
+        } while (pos < len);
+
+        for (pos = 0; pos < compat->len; pos++) {
+            g_autofree gchar *filename = g_strdup_printf(EG25_CONFDIR "/%s.toml", (gchar *)g_ptr_array_index(compat, pos));
+            if (access(filename, F_OK) == 0) {
+                g_message("Opening config file: %s", filename);
+                f = fopen(filename, "r");
+                break;
+            }
+        }
+
+        if (!f) {
+            for (pos = 0; pos < compat->len; pos++) {
+                g_autofree gchar *filename = g_strdup_printf(EG25_DATADIR "/%s.toml", (gchar *)g_ptr_array_index(compat, pos));
+                if (access(filename, F_OK) == 0) {
+                    g_message("Opening config file: %s", filename);
+                    f = fopen(filename, "r");
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!f)
+        g_error("unable to find a suitable config file!");
+
+    toml_config = toml_parse_file(f, error, sizeof(error));
+    if (!toml_config)
+        g_error("unable to parse config file: %s", error);
+
+    return toml_config;
+}
+
 int main(int argc, char *argv[])
 {
     g_autoptr(GOptionContext) opt_context = NULL;
     g_autoptr(GError) err = NULL;
     struct EG25Manager manager;
-    char compatible[32];
-    int fd, ret;
+    gchar *config_file = NULL;
+    toml_table_t *toml_config;
+    toml_datum_t toml_value;
     const GOptionEntry options[] = {
         { "gnss", 'g', 0, G_OPTION_ARG_NONE, &manager.manage_gnss, "Manage the GNSS feature.", NULL },
+        { "config", 'c', 0, G_OPTION_ARG_STRING, &config_file, "Config file to use.", NULL },
         { NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
     };
 
@@ -224,21 +287,13 @@ int main(int argc, char *argv[])
 
     manager.loop = g_main_loop_new(NULL, FALSE);
 
-    fd = open("/proc/device-tree/compatible", O_RDONLY);
-    if (fd < 0) {
-        g_critical("Unable to read 'compatible' string from device tree");
-        return 1;
-    }
-    ret = read(fd, compatible, sizeof(compatible));
-    if (ret > 0 && !strstr(compatible, "pine64,pinephone-1.2"))
-        manager.braveheart = TRUE;
-    close(fd);
+    toml_config = parse_config_file(config_file);
 
-    at_init(&manager);
-    gpio_init(&manager);
-    mm_iface_init(&manager);
-    suspend_init(&manager);
-    udev_init(&manager);
+    at_init(&manager, toml_table_in(toml_config, "at"));
+    gpio_init(&manager, toml_table_in(toml_config, "gpio"));
+    mm_iface_init(&manager, toml_table_in(toml_config, "mm-iface"));
+    suspend_init(&manager, toml_table_in(toml_config, "suspend"));
+    udev_init(&manager, toml_table_in(toml_config, "udev"));
 
     g_idle_add(G_SOURCE_FUNC(modem_start), &manager);
 

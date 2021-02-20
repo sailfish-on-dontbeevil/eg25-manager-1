@@ -92,7 +92,7 @@ int gpio_sequence_resume(struct EG25Manager *manager)
     return 0;
 }
 
-int gpio_init(struct EG25Manager *manager)
+int gpio_init(struct EG25Manager *manager, toml_table_t *config)
 {
     int i, ret;
     unsigned *gpio_in_idx;

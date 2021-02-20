@@ -8,7 +8,7 @@
 
 #include "manager.h"
 
-int gpio_init(struct EG25Manager *state);
+int gpio_init(struct EG25Manager *state, toml_table_t *config);
 void gpio_destroy(struct EG25Manager *state);
 
 int gpio_sequence_poweron(struct EG25Manager *state);
