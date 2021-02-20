@@ -27,6 +27,7 @@ configure = [
 #               match, the command is then executed with value `expect` in
 #               order to set the parameter to the configured value (optional)
 # A command can have `expect` OR `value` configured, but it shouldn't have both
+    { cmd = "QGMR" },
     { cmd = "QDAI", expect = "1,1,0,1,0,0,1,1" },
     { cmd = "QCFG", subcmd = "risignaltype", expect = "\"physical\"" },
     { cmd = "QCFG", subcmd = "ims", expect = "1" },
