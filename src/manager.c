@@ -165,7 +165,14 @@ void modem_reset(struct EG25Manager *manager)
     return;
 
 error:
-    // Everything else failed, reset the modem
+    // Release blocking sleep inhibitor
+    if (manager->suspend_block_fd >= 0)
+        suspend_inhibit(manager, FALSE, TRUE);
+    if (manager->modem_boot_timer) {
+        g_source_remove(manager->modem_boot_timer);
+        manager->modem_boot_timer = 0;
+    }
+    // Everything else failed, reboot the modem
     at_sequence_reset(manager);
 }
 
