@@ -320,7 +320,7 @@ void at_sequence_configure(struct EG25Manager *manager)
 {
     for (guint i = 0; i < configure_commands->len; i++) {
         struct AtCommand *cmd = &g_array_index(configure_commands, struct AtCommand, i);
-        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->value, cmd->expected);
     }
     send_at_command(manager);
 }
@@ -329,7 +329,7 @@ void at_sequence_suspend(struct EG25Manager *manager)
 {
     for (guint i = 0; i < suspend_commands->len; i++) {
         struct AtCommand *cmd = &g_array_index(suspend_commands, struct AtCommand, i);
-        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->value, cmd->expected);
     }
     send_at_command(manager);
 }
@@ -338,7 +338,7 @@ void at_sequence_resume(struct EG25Manager *manager)
 {
     for (guint i = 0; i < resume_commands->len; i++) {
         struct AtCommand *cmd = &g_array_index(resume_commands, struct AtCommand, i);
-        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->value, cmd->expected);
     }
     send_at_command(manager);
 }
@@ -347,7 +347,7 @@ void at_sequence_reset(struct EG25Manager *manager)
 {
     for (guint i = 0; i < reset_commands->len; i++) {
         struct AtCommand *cmd = &g_array_index(reset_commands, struct AtCommand, i);
-        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->expected, cmd->value);
+        append_at_command(manager, cmd->cmd, cmd->subcmd, cmd->value, cmd->expected);
     }
     send_at_command(manager);
 }
