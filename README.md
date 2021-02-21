@@ -29,13 +29,20 @@ $ ninja -C ../eg25-build
 # ninja -C ../eg25-build install
 ```
 
+## Configuration
+
+`eg25-manager` uses device-specific configuration files, named after the
+device-tree `compatible` field. These files are installed to
+`/usr/share/eg25-manager`. They can be copied to `/etc/eg25-manager` then
+modified, that way they won't be overwritten during an upgrade.
+
 ## Running
 
 `eg25-manager` is usually run as a systemd service, but can also be
 manually started from the command-line (requires root privileges):
 
 ```
-# eg25-manager
+# eg25manager
 ```
 
 ## License
