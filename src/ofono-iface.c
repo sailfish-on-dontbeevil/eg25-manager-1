@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2020 Oliver Smith <ollieparanoid@postmarketos.org>
+ * Copyright (C) 2021 Bhushan Shah <bshah@kde.org>
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
