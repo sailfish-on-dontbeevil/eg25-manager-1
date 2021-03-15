@@ -39,7 +39,7 @@ configure = [
     { cmd = "QCFG", subcmd = "urc/ri/smsincoming", expect = "\"pulse\",2000" },
     { cmd = "QCFG", subcmd = "urc/ri/other", expect = "\"off\",1" },
     { cmd = "QCFG", subcmd = "urc/delay", expect = "1" },
-    { cmd = "QURCCFG", subcmd = "urcport", expect = "\"usbat\"" },
+    { cmd = "QURCCFG", subcmd = "urcport", expect = "\"all\"" },
     { cmd = "QGPS", value = "1" },
     { cmd = "QSCLK", value = "1" },
     { cmd = "QCFG", subcmd = "urc/cache", value = "0" }

@@ -32,7 +32,7 @@ configure = [
     { cmd = "QCFG", subcmd = "risignaltype", expect = "\"physical\"" },
     { cmd = "QCFG", subcmd = "ims", expect = "1" },
     { cmd = "QCFG", subcmd = "apready", expect = "1,0,500" },
-    { cmd = "QURCCFG", subcmd = "urcport", expect = "\"usbat\"" },
+    { cmd = "QURCCFG", subcmd = "urcport", expect = "\"all\"" },
     { cmd = "QGPS", value = "1" },
     { cmd = "QSCLK", value = "1" },
     { cmd = "QCFG", subcmd = "urc/cache", value = "0" }
