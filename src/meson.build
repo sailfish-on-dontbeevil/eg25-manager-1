@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+
+subdir('libgdbofono')
+
 executable (
     'eg25manager',
     [
@@ -17,5 +20,6 @@ executable (
         'udev.c', 'udev.h',
     ],
     dependencies : mgr_deps,
+    link_with: gdbofono_lib,
     install : true
 )

@@ -10,6 +10,7 @@
 #include <gpiod.h>
 #include <gudev/gudev.h>
 #include <libmm-glib.h>
+#include <libgdbofono/gdbo-manager.h>
 
 #include "toml.h"
 
@@ -51,7 +52,10 @@ struct EG25Manager {
     guint mm_watch;
     MMManager *mm_manager;
     MMModem *mm_modem;
+
     guint ofono_watch;
+    GDBOManager *ofono_manager;
+    GDBusConnection *ofono_connection;
 
     GDBusProxy *suspend_proxy;
     int suspend_delay_fd;
