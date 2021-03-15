@@ -10,6 +10,7 @@
 #include <gpiod.h>
 #include <gudev/gudev.h>
 #include <libmm-glib.h>
+#include <libgdbofono/gdbo-manager.h>
 
 #include "toml.h"
 
@@ -27,6 +28,12 @@ enum EG25State {
     EG25_STATE_FINISHING
 };
 
+enum ModemIface {
+    MODEM_IFACE_NONE = 0,
+    MODEM_IFACE_MODEMMANAGER,
+    MODEM_IFACE_OFONO
+};
+
 struct EG25Manager {
     GMainLoop *loop;
     guint reset_timer;
@@ -41,9 +48,14 @@ struct EG25Manager {
     enum EG25State modem_state;
     gchar *modem_usb_id;
 
+    enum ModemIface modem_iface;
     guint mm_watch;
     MMManager *mm_manager;
     MMModem *mm_modem;
+
+    guint ofono_watch;
+    GDBOManager *ofono_manager;
+    GDBusConnection *ofono_connection;
 
     GDBusProxy *suspend_proxy;
     int suspend_delay_fd;

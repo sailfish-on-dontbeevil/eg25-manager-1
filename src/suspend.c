@@ -170,11 +170,14 @@ static void signal_cb(GDBusProxy *proxy,
         g_message("system is resuming");
         take_inhibitor(manager, FALSE);
         modem_resume_pre(manager);
-        if (manager->mm_modem) {
+        if (manager->mm_modem || manager->modem_iface == MODEM_IFACE_OFONO) {
             /*
              * On some systems ModemManager doesn't handle suspend/resume, so
              * we still have a valid/managed modem when resuming. In this case,
              * do the whole resume sequence immediately.
+             *
+             * If modem is managed by ofono, we also do resume sequence immediately
+             * as ofono handles resuming from sleep itself.
              */
             manager->modem_state = EG25_STATE_CONFIGURED;
             modem_resume_post(manager);
