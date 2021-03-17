@@ -40,6 +40,7 @@ struct EG25Manager {
     gboolean use_libusb;
     guint usb_vid;
     guint usb_pid;
+    gulong poweron_delay;
 
     int at_fd;
     guint at_source;

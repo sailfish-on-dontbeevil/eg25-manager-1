@@ -88,6 +88,9 @@ static gboolean modem_start(struct EG25Manager *manager)
 
     if (should_boot) {
         g_message("Starting modem...");
+        // Modem might crash on boot (especially with worn battery) if we don't delay here
+        if (manager->poweron_delay > 0)
+            g_usleep(manager->poweron_delay);
         gpio_sequence_poweron(manager);
         manager->modem_state = EG25_STATE_POWERED;
     } else {
@@ -310,6 +313,17 @@ int main(int argc, char *argv[])
         toml_value = toml_int_in(toml_manager, "usb_pid");
         if (toml_value.ok)
             manager.usb_pid = toml_value.u.i;
+
+        toml_value = toml_int_in(toml_manager, "poweron_delay");
+        if (toml_value.ok) {
+            if (toml_value.u.i >= 0 && toml_value.u.i <= G_MAXULONG) {
+                // Safe to cast into gulong
+                manager.poweron_delay = (gulong) toml_value.u.i;
+            } else {
+                // Changed from initialized default value but not in range
+                g_message("Configured poweron_delay out of range, using default");
+            }
+        }
     }
 
     at_init(&manager, toml_table_in(toml_config, "at"));

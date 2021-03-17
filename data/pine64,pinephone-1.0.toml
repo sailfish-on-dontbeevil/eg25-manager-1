@@ -3,6 +3,9 @@ need_libusb = true
 usb_vid = 0x2c7c
 usb_pid = 0x0125
 
+# Delay between setting GPIO and PWRKEY sequence, set in microseconds
+poweron_delay = 100000
+
 # Uncomment the following if you need to change the modem detection timeout on
 # resume and/or the time during which suspend is blocked after modem boot
 #[suspend]
