@@ -53,8 +53,12 @@ mgr_deps = [
     dependency('gudev-1.0'),
     dependency('libgpiod'),
     dependency('libusb-1.0'),
-    dependency('mm-glib'),
 ]
+
+mmglib_dep = dependency('mm-glib', required : false)
+if mmglib_dep.found()
+  add_global_arguments('-DHAVE_MMGLIB=1', language : 'c')
+endif
 
 subdir('data')
 subdir('src')
